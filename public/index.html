@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Feedback Sentiment Analysis</title>
+        <style>
+            body,
+            html {
+                height: 100%;
+                margin: 0;
+                font-family: "Arial", sans-serif;
+                transition: background-color 0.5s ease;
+            }
+
+            body {
+                background-color: #f4f4f4;
+                color: #000000;
+                display: flex;
+                flex-direction: column;
+                justify-content: center;
+                align-items: center;
+                height: auto;
+                padding: 0 20px;
+            }
+
+            h1 {
+                color: #333;
+            }
+
+            form {
+                display: grid;
+                justify-items: center;
+                grid-template-columns: auto;
+                background-color: #fff;
+                padding: 20px;
+                border-radius: 8px;
+                box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+                margin-bottom: 20px;
+                width: 100%;
+                max-width: 600px;
+            }
+
+            textarea {
+                width: 100%;
+                padding: 10px;
+                margin-top: 10px;
+                margin-bottom: 20px;
+                border: 1px solid #ccc;
+                font-size: 1.2rem;
+                border-radius: 4px;
+                box-sizing: border-box;
+                transition: border-color 0.3s ease;
+                resize: none;
+            }
+
+            textarea:focus {
+                border-color: #007bff;
+                outline: none;
+            }
+
+            input[type="submit"] {
+                background-color: #007bff;
+                color: white;
+                padding: 12px 20px;
+                border: none;
+                border-radius: 4px;
+                cursor: pointer;
+                transition: background-color 0.3s ease;
+            }
+
+            input[type="submit"]:hover {
+                background-color: #0056b3;
+            }
+
+            #result {
+                padding: 20px;
+                background-color: #fff;
+                border-radius: 8px;
+                box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+                width: 100%;
+                max-width: 600px;
+                margin-bottom: 100px;
+            }
+
+            #result p {
+                
+                color: #333;
+            }
+
+            @keyframes fall {
+                0% {
+                    top: -50px;
+                }
+                100% {
+                    top: 100vh;
+                }
+            }
+
+            .emoji {
+                position: fixed;
+                left: 50%;
+                font-size: 24px;
+                animation: fall linear 1s;
+            }
+
+            img {
+                width: 35%;
+                margin-left: 150px;
+            }
+
+            #add {
+                background-color: #007bff;
+                color: white;
+                padding: 12px 20px;
+                border: none;
+                border-radius: 4px;
+                cursor: pointer;
+                transition: background-color 0.3s ease;
+                margin-bottom: 20px;
+            }
+        </style>
+    </head>
+    <body>
+        <img src="./images/criticmapper.png" alt="" />
+        <h1>Unveil the emotions behind Feedback !</h1>
+        <form id="feedback-form">
+            <textarea
+                class="feedback-input"
+                rows="4"
+                placeholder="Enter your feedback here..."
+            ></textarea
+            ><br />
+            <input type="submit" id="submit" value="Analyze Sentiment" />
+        </form>
+        <button id="add">Add Comment</button>
+        <div id="result"></div>
+
+        <div id="emoji-container"></div>
+
+        <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+        <script>
+
+            // ajouter un bouton qui ajoutera au dom un textarea en plus au form avec l'id feedback-form
+            const addFeedback = document.querySelector("#add");
+            const input = document.querySelector("#submit");
+
+            addFeedback.addEventListener("click", function () {
+                const textarea = document.createElement("textarea");
+                textarea.rows = 4;
+                textarea.placeholder = "Enter your feedback here...";
+                textarea.classList.add("feedback-input");
+                input.before(textarea);
+            });
+
+
+            document
+                .getElementById("feedback-form")
+                .addEventListener("submit", function (e) {
+                    e.preventDefault();
+                    // récupérer tous les textarea avec leur valeur et les concaténer dans une seule chaine de caractère séparée par un espace
+                    const text = Array.from(
+                        document.querySelectorAll(".feedback-input")
+                    )
+                        .map((input) => input.value)
+                        .join(" ");
+                    axios
+                        .post("/analyze", { text })
+                        .then(function (response) {
+                            const score = response.data.score;
+                            document.getElementById(
+                                "result"
+                            ).innerHTML = `<p>Analysis: ${
+                                score > 0
+                                    ? "Positive 😊"
+                                    : score < 0
+                                    ? "Negative 😢"
+                                    : "Neutral 😐"
+                            }</p>`;
+                            document.body.style.backgroundColor =
+                                score > 0
+                                    ? "green"
+                                    : score < 0
+                                    ? "red"
+                                    : "orange";
+
+                            // Générer plusieurs emojis qui tombent
+                            for (let i = 0; i < 50; i++) {
+                                // Modifier le 20 pour changer le nombre d'emojis
+                                setTimeout(() => {
+                                    // Utiliser setTimeout pour décaler légèrement la chute des emojis
+                                    const emoji = document.createElement("div");
+                                    emoji.classList.add("emoji");
+                                    emoji.textContent =
+                                        score > 0
+                                            ? "😊"
+                                            : score < 0
+                                            ? "😢"
+                                            : "😐";
+                                    emoji.style.fontSize = "50px";
+                                    emoji.style.left = `${
+                                        Math.random() * 100
+                                    }%`;
+                                    emoji.style.animationDuration = `${
+                                        Math.random() * 3 + 2
+                                    }s`; // Durée entre 2 et 5 secondes
+                                    document.body.appendChild(emoji);
+
+                                    // Supprimer l'emoji après qu'il a fini de tomber
+                                    setTimeout(() => emoji.remove(), 2300); // Assurez-vous que cela correspond à la durée d'animation maximale
+                                }, i * 100); // Modifier le 100 pour ajuster l'intervalle entre chaque emoji
+                            }
+                        })
+                        .catch(function (error) {
+                            console.log(error);
+                        });
+                });
+        </script>
+    </body>
+</html>
